@@ -1,19 +1,30 @@
 #include "aubio/aubio.h"
 #include "stdio.h"
-int main ()
+int main (int argc, char **argv)
 {
-  printf("hello");
   // 1. allocate some memory
   uint_t n = 0; // frame counter
   uint_t win_s = 1024; // window size
   uint_t hop_s = win_s / 4; // hop size
-  uint_t samplerate = 44100; // samplerate
+  uint_t samplerate = 0; // samplerate
+  unint_t n_frames = 0, read = 0;
+
+  unint_t err = 0;
   // create some vectors
   fvec_t *input = new_fvec (hop_s); // input buffer
   fvec_t *out = new_fvec (1); // output candidates
+
+  //declare new source
+  char_t *source_path = argv[1];
+  aubio_source_t* s = new_aubio_soure(source_path_samplerate, hop_s);
+  if(!s){err = 1; goto beach;}
+  if (samplerate == 0) samplerate = aubio_source_get_samplerate(s);
+
+
   // create pitch object
   aubio_pitch_t *o = new_aubio_pitch ("default", win_s, hop_s, samplerate);
-  // 2. do something with it
+
+
   while (n < 100) {
     // get `hop_s` new samples into `input`
     // ...
@@ -28,5 +39,6 @@ int main ()
   del_fvec (out);
   del_fvec (input);
   aubio_cleanup ();
-  return 0;
+  beach:
+    return err;
 }
