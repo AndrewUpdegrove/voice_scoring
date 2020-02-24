@@ -6,8 +6,8 @@ int main (int argc, char **argv)
     printf("Not enough arguments\n");
   }
   uint_t samplerate = 0;
-  uint_t hop_size = 256;
-  uint_t win_size = 1024;
+  uint_t hop_size = 4096;
+  uint_t win_size = 16384;
   uint_t total_frames = 0, frames_read = 0;
   fvec_t *hopper = new_fvec(hop_size);
 
@@ -24,7 +24,10 @@ int main (int argc, char **argv)
   uint_t succ = aubio_wavetable_play(wavetable);
   printf("Success? %d\n", succ);
 
-  aubio_onset_t *start = new_aubio_onset("default", win_size, hop_size, samplerate);
+  aubio_onset_t *start = new_aubio_onset("complex", win_size, hop_size, samplerate);
+  aubio_onset_set_threshold(start, 0);
+  aubio_onset_set_silence(start, -20);
+
   fvec_t *onset = new_fvec(1);
 
   aubio_notes_t *notes = new_aubio_notes("default", win_size, hop_size, samplerate);
@@ -35,7 +38,10 @@ int main (int argc, char **argv)
   do {
     aubio_source_do(src, hopper, &frames_read);
     aubio_pitch_do(o, hopper, pitch);
-    aubio_notes_do(notes, hopper, found_note);
+    aubio_onset_do(start, hopper, onset);
+    //aubio_notes_do(notes, hopper, found_note);
+
+    /*
     if(found_note->data[2] != 0){
       lastmidi = found_note->data[2];
       send_noteon(lastmidi, 0);
@@ -44,8 +50,10 @@ int main (int argc, char **argv)
       lastmidi = found_note->data[0];
       send_noteon(lastmidi, found_note->data[1]);
     }
+    */
     smpl_t freq = fvec_get_sample(pitch, 0);
-    smpl_t is_onset = fvec_get_sample(onset, 0);
+
+    smpl_t is_onset = aubio_onset_get_last(start);
     printf("Pitch is: %f\n", freq);
     printf("Onset is: %f\n", is_onset);
     //aubio_wavetable_set_amp(wavetable, aubio_level_lin(hopper));
