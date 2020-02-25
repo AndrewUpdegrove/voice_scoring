@@ -2,11 +2,15 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h" //included for rounding of midi value
+#include <vector>
+
+
 int main (int argc, char **argv)
 {
   if (argc < 2){
     printf("Not enough arguments\n");
   }
+
   uint_t samplerate = 0;
   uint_t hop_size = 512;
   uint_t win_size = hop_size * 4;
@@ -22,25 +26,34 @@ int main (int argc, char **argv)
   fvec_t *out_buffer = new_fvec(hop_size);
   fvec_t *pitch = new_fvec(1);
 
-  aubio_onset_t *start = new_aubio_onset("energy", win_size, hop_size, samplerate);
-  aubio_onset_set_threshold(start, 0);
-  aubio_onset_set_silence(start, -10);
+  aubio_onset_t *start = new_aubio_onset("phase", win_size, hop_size, samplerate);
+  aubio_onset_set_threshold(start, 5);
+  aubio_onset_set_silence(start, -20);
   fvec_t *onset = new_fvec(1);
 
+  vector<float> notes(8);
+  uint_t dur = aubio_source_get_duration(src);
 
   do {
     aubio_source_do(src, hopper, &frames_read);
-    aubio_pitch_do(o, hopper, pitch);
     aubio_onset_do(start, hopper, onset);
-    smpl_t freq = fvec_get_sample(pitch, 0);
 
-    smpl_t is_onset = aubio_onset_get_last_ms(start);
-    //printf("Pitch is: %d\n", (int) round(freq));
+    smpl_t is_onset = aubio_onset_get_last(start);
+    if(myvector.empty()){
+      if(is_onset <= dur){
+        notes.push_back(is_onset);
+      }
+    } else if(is_onset <= dur && notes.back() > is_onset){
+      notes.push_back(is_onset);
+    }
     printf("Onset is: %f\n", is_onset);
     //fvec_print(hopper);
     total_frames += frames_read;
   } while (frames_read == hop_size);
+  printf("Notes occurred at")
+  for()
   printf("read %d frames at %dHz (%d blocks) from %s\n", total_frames, samplerate, total_frames / hop_size, source_path);
+
 
   del_fvec(hopper);
   del_fvec(pitch);
@@ -50,6 +63,5 @@ int main (int argc, char **argv)
   del_aubio_source(src);
   del_aubio_pitch(o);
   del_aubio_onset(start);
-
 
 }
