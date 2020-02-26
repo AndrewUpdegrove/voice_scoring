@@ -27,30 +27,10 @@ int main (int argc, char **argv)
   aubio_onset_set_silence(start, -40);
   fvec_t *onset = new_fvec(1);
 
-
-  do {
-    aubio_source_do(src, hopper, &frames_read);
-    aubio_pitch_do(o, hopper, pitch);
-    aubio_onset_do(start, hopper, onset);
-    smpl_t freq = fvec_get_sample(pitch, 0);
-
-    smpl_t is_onset = aubio_onset_get_last_ms(start);
-    printf("At: %d\n", total_frames);
-    printf("Pitch is: %d\n", (int) round(freq));
-    //printf("Onset is: %f\n", is_onset);
-    //fvec_print(hopper);
-    total_frames += frames_read;
-  } while (frames_read == hop_size);
-  printf("read %d frames at %dHz (%d blocks) from %s\n", total_frames, samplerate, total_frames / hop_size, source_path);
-
-  del_fvec(hopper);
-  del_fvec(pitch);
-  del_fvec(out_buffer);
-  del_fvec(onset);
-
-  del_aubio_source(src);
-  del_aubio_pitch(o);
-  del_aubio_onset(start);
-
+  aubio_source_seek(src, 223314);
+  aubio_source_do(src, hopper, &frames_read);
+  aubio_pitch_do(o, hopper, pitch);
+  smpl_t freq = fvec_get_sample(pitch,0);
+  printf("Pitch is: %f\n", freq);
 
 }
