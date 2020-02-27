@@ -109,7 +109,7 @@ int main (int argc, char **argv)
       aubio_pitch_do(o,hopper, pitch);
       pitches[i] = (int) round(fvec_get_sample(pitch, 0));
       std::cout << "Pitch " << pitches[i] << " played at " << notes[i] / samplerate << "\n";
-      //std::cout << "Confidence: " << aubio_pitch_get_confidence(o) << "\n";
+      std::cout << "Confidence: " << aubio_pitch_get_confidence(o) << "\n";
       i++;
     }
     total_frames += frames_read;
