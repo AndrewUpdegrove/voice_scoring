@@ -49,27 +49,33 @@ int main (int argc, char **argv)
     printf("Not enough arguments\n");
   }
 
-  uint_t samplerate = 0;
-  uint_t hop_size = 256;
-  uint_t win_size = hop_size * 4;
+  uint_t samplerate = 44100;
+  uint_t hop_size = 1024;
+
   uint_t total_frames = 0, frames_read = 0;
   fvec_t *hopper = new_fvec(hop_size);
+  fvec_t *big_hopper = new_fvec(hop_size*4);
+  uint_t win_size = hop_size * 4;
+
 
   char_t *source_path = argv[1];
   aubio_source_t* src  = new_aubio_source(source_path, samplerate, hop_size);
-  samplerate = aubio_source_get_samplerate(src);
+  //samplerate = aubio_source_get_samplerate(src);
+
+  aubio_source_t* src2 = new_aubio_source(source_path, samplerate, hop_size);
 
   aubio_pitch_t *o = new_aubio_pitch("default", win_size, hop_size, samplerate);
   aubio_pitch_set_unit(o, "midi");
+  aubio_pitch_set_tolerance(o, .85);
   fvec_t *out_buffer = new_fvec(hop_size);
   fvec_t *pitch = new_fvec(1);
 
-  aubio_onset_t *start = new_aubio_onset("energy", win_size, hop_size, samplerate);
+  aubio_onset_t *start = new_aubio_onset("default", win_size, hop_size, samplerate);
   aubio_onset_set_threshold(start, 0);
   aubio_onset_set_silence(start, -40);
   fvec_t *onset = new_fvec(1);
 
-  std::vector<float> notes;
+  std::vector<smpl_t> notes;
   uint_t dur = aubio_source_get_duration(src);
 
   do {
@@ -88,19 +94,36 @@ int main (int argc, char **argv)
     //fvec_print(hopper);
     total_frames += frames_read;
   } while (frames_read == hop_size);
+  total_frames = 0;
 
   //printf("read %d frames at %dHz (%d blocks) from %s\n", total_frames, samplerate, total_frames / hop_size, source_path);
 
   std::cout << std::setprecision(2) << std::fixed;
   std::cout << notes.size() << " notes were detected.\nThey are:\n";
   std::vector<int> pitches(notes.size());
+  int i = 0;
+  int bouncer = 0;
+  do{
+    aubio_source_do(src2, hopper, &frames_read);
+    if(notes[i] <= total_frames && i != notes.size()){
+      aubio_pitch_do(o,hopper, pitch);
+      pitches[i] = (int) round(fvec_get_sample(pitch, 0));
+      std::cout << "Pitch " << pitches[i] << " played at " << notes[i] / samplerate << "\n";
+      //std::cout << "Confidence: " << aubio_pitch_get_confidence(o) << "\n";
+      i++;
+    }
+    total_frames += frames_read;
+  } while (frames_read == hop_size);
+
+  /*
   for(int i = 0; i < notes.size(); i++){
     aubio_source_seek(src, notes[i]);
     aubio_source_do(src, hopper, &frames_read);
     aubio_pitch_do(o, hopper, pitch);
-    pitches[i] = (int) round(fvec_get_sample(pitch, 0));
+    pitches[i] = (int) round(pitch->data[0]);
     std::cout << "Pitch " << pitches[i] << " played at " << notes[i] << "\n";
   }
+  */
 
 
 
